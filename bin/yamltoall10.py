@@ -18,6 +18,9 @@ import html
 import base64
 
 
+AMC_POINT_BONNE_REPONSE: int = 4
+
+
 # Warning : answer['correct'] now appears to be a string 'True' or 'False' when imported from yaml file
 # and no more a Boolean True/False (change has been made)
 
@@ -148,7 +151,7 @@ if output_format == "tex":
                     listtag = [(k, v) for k, v in tagdic.items()]
 
                     tagkeywd, tagval = listtag[0]
-                    if type(tagval) == int or type(tagval) == float:
+                    if isinstance(tagval, (int, float)):
                         tagval = str(tagval)
 
                     thetags += tagkeywd + "=" + tagval + ", "
@@ -201,7 +204,7 @@ if output_format == "tex":
                     score = str(score)
                     value = value + "\\score{" + score + "}\n    "
 
-                if correct == True:
+                if correct:
                     out.write("    \\good{" + value + "}\n")
                 else:
                     out.write("    \\bad{" + value + "}\n")
@@ -401,7 +404,7 @@ if output_format == "amc":
             ):
                 out.write("\n\n\\begin{question}{" + myid + "}\n\n")
             elif "type" in data.keys() and data["type"] == "open":
-                out.write("\n\n\\begin{question}{ouverte}" + myid + "}\n\n")
+                out.write("\n\n\\begin{question}{ouverte}\n\n")
             else:
                 out.write("\n\n\\begin{questionmult}{" + myid + "}\n\n")
 
@@ -440,13 +443,19 @@ if output_format == "amc":
                 out.write("\\begin{choiceshoriz}")
             elif "multicols" in data.keys() and data["multicols"]:
                 out.write("\\begin{choiceshoriz}")
-            else:
+            elif len(data["answers"]) != 0:
                 out.write("\\begin{choices}")
 
-            if "keeporder" in data.keys() and data["keeporder"]:
-                out.write("[o]\n")
-            else:
-                out.write("\n")
+                if "keeporder" in data.keys() and data["keeporder"]:
+                    out.write("[o]\n")
+                else:
+                    out.write("\n")
+            if "type" in data.keys() and data["type"] == "open":
+                out.write(
+                    " \\AMCOpen{lines=3}{\\mauvaise[F]{F}\\bareme{0}\\bonne[J]{J}\\bareme{"
+                    + str(AMC_POINT_BONNE_REPONSE)
+                    + "}}\n\n"
+                )
 
             for answers in data["answers"]:
                 value = answers["value"]
@@ -471,7 +480,7 @@ if output_format == "amc":
                 out.write("\\end{choiceshoriz}\n")
             elif "multicols" in data.keys() and data["multicols"]:
                 out.write("\\end{choiceshoriz}\n")
-            else:
+            elif len(data["answers"]) != 0:
                 out.write("\\end{choices}\n")
 
             if "explanations" in data.keys():
@@ -487,10 +496,8 @@ if output_format == "amc":
 
             # Single closing of environment (v07 had a double-close bug with two separate blocks)
             if "type" in data.keys() and (
-                data["type"] == "onlyone" or data["type"] == "truefalse"
+                data["type"] in ["onlyone", "truefalse", "open"]
             ):
-                out.write("\\end{question}\n")
-            elif "type" in data.keys() and data["type"] == "open":
                 out.write("\\end{question}\n")
             else:
                 out.write("\\end{questionmult}\n")
@@ -727,31 +734,31 @@ if output_format == "moodle":
             if "link" in data.keys():
                 thelink = data["link"]
                 # For tags
-                for l in thelink:
+                for propriete in thelink:
                     tagkeywd = "lien"
                     autotags += (
                         "    <tag><text>"
                         + tagkeywd
                         + "="
-                        + l["link"]
+                        + propriete["link"]
                         + "["
-                        + l["type"]
+                        + propriete["type"]
                         + "]["
-                        + l["title"]
+                        + propriete["title"]
                         + "]"
                         + "</text></tag>\n"
                     )
                 # For explanations
 
                 link_explanations = "\n Liens :\n"
-                for l in thelink:
+                for propriete in thelink:
                     link_explanations += (
                         '<a href="'
-                        + l["link"]
+                        + propriete["link"]
                         + '">'
-                        + l["title"]
+                        + propriete["title"]
                         + " ("
-                        + l["type"]
+                        + propriete["type"]
                         + ")</a> \n"
                     )
 
@@ -764,7 +771,7 @@ if output_format == "moodle":
                     listtag = [(k, v) for k, v in tagdic.items()]
 
                     tagkeywd, tagval = listtag[0]
-                    if type(tagval) == int or type(tagval) == float:
+                    if isinstance(tagval, (int, float)):
                         tagval = str(tagval)
 
                     thetags += (

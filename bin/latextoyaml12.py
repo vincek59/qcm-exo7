@@ -203,7 +203,7 @@ def one_exo_to_yaml(text_exo, qcmdict={}):
         "(.*?)(?=[\\s*]\\\\begin{answers})", text_exo, flags=re.MULTILINE | re.DOTALL
     )
 
-    if theallquestion == None:
+    if theallquestion is None:
         theallquestion = re.search(
             "(.*?)(?=[\\s*]\\\\AMCOpen)", text_exo, flags=re.MULTILINE | re.DOTALL
         )
@@ -375,6 +375,16 @@ def one_exo_to_yaml(text_exo, qcmdict={}):
     else:
         oneline = False
 
+    # the multicol flag : idem
+    themulti = re.search("\\\\qmulticols", allquestion, flags=re.MULTILINE | re.DOTALL)
+    if themulti:
+        multicols = True
+        allquestion = re.sub(
+            "\\\\qmulticols", "", allquestion, flags=re.MULTILINE | re.DOTALL
+        )
+    else:
+        multicols = False
+
     # the keeporder flag : idem
     thekeeporder = re.search(
         "\\\\qkeeporder", allquestion, flags=re.MULTILINE | re.DOTALL
@@ -429,7 +439,6 @@ def one_exo_to_yaml(text_exo, qcmdict={}):
         flags=re.MULTILINE | re.DOTALL,
     )
     if theanswers:
-        print("Il  y a des réponses")
         answers = theanswers.group(0)
         answers = answers.lstrip()
         # print('\n\n'+answers+'\n\n')
@@ -564,6 +573,9 @@ def one_exo_to_yaml(text_exo, qcmdict={}):
 
     if oneline:
         text_yaml += "oneline: True" + "\n\n"
+
+    if multicols:
+        text_yaml += "multicols: True" + "\n\n"
 
     if keeporder:
         text_yaml += "keeporder: True" + "\n\n"
